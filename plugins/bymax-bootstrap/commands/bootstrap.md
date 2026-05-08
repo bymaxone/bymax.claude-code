@@ -1,5 +1,5 @@
 ---
-description: Scaffold a NEW project (or empty repo) with universal best practices wired up — strict TypeScript, ESLint flat-config tailored to the stack, Prettier, .vscode (format on save), .editorconfig, .gitignore, Husky + commitlint + lint-staged, CLAUDE.md, path aliases, and Conventional Commits. Detects the stack (Next/Expo-RN/Vite-React/Node) and uses the right ESLint preset. Triggers: "novo projeto", "new project", "scaffold", "init project", "create project", "set up", "bootstrap", "starter", "boilerplate".
+description: 'Scaffold a NEW project (or empty repo) with universal best practices wired up — strict TypeScript, ESLint flat-config tailored to the stack, Prettier, .vscode (format on save), .editorconfig, .gitignore, Husky + commitlint + lint-staged, CLAUDE.md, path aliases, and Conventional Commits. Detects the stack (Next/Expo-RN/Vite-React/Node) and uses the right ESLint preset. Triggers: "novo projeto", "new project", "scaffold", "init project", "create project", "set up", "bootstrap", "starter", "boilerplate".'
 ---
 
 # Bootstrap Command

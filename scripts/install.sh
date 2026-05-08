@@ -2,21 +2,23 @@
 #
 # bymax.claude-code — restore script.
 #
-# Restores the author's full Claude Code setup from this repo into ~/.claude/
+# Restores the author's vendor / personal / MCP setup into ~/.claude/
 # (and ~/.mcp.json for user-scope MCP servers).
 # Used after wiping a Mac or setting up a new dev machine.
 #
+# This script does NOT install the bymax plugins — those are installed via
+# the Claude Code plugin marketplace (`claude plugin install …`). The script
+# prints the exact commands at the end.
+#
 # Usage:
-#   ./scripts/install.sh                       (default — symlinks plugins + vendor + personal)
+#   ./scripts/install.sh                       (default — symlinks vendor + personal, copies MCP)
 #   ./scripts/install.sh --no-vendor           (skip vendor third-party skills)
 #   ./scripts/install.sh --no-personal         (skip personal config)
 #   ./scripts/install.sh --no-mcp              (skip ~/.mcp.json copy)
 #   ./scripts/install.sh --write-mcp-enabled   (also write ~/.claude/settings.local.json with enabledMcpjsonServers)
-#   ./scripts/install.sh --plugins-only        (only the marketplace plugins, no vendor / no personal / no mcp)
 #   ./scripts/install.sh --dry-run             (print what would happen, write nothing)
 #
 # What it does:
-#   - Symlinks each plugin's commands/, agents/, skills/, hooks/, templates/ into ~/.claude/<kind>/.
 #   - Symlinks vendor skills into ~/.claude/skills/<name>/.
 #   - Symlinks personal hooks/commands into ~/.claude/hooks|commands/.
 #   - Copies (does NOT symlink) personal/mcp.template.json → ~/.mcp.json so you can edit
@@ -25,8 +27,8 @@
 #     to <name>.bak-<timestamp> before being replaced.
 #
 # What it does NOT do:
-#   - Does NOT install marketplace plugins via `claude plugin install`. The script
-#     prints the exact commands at the end — run them manually after restart.
+#   - Does NOT install bymax plugins. Run `claude plugin install …` after restart
+#     (the script prints the exact commands at the end).
 #   - Does NOT touch ~/.claude/settings.json. Copy personal/settings.template.json
 #     manually (it has comments explaining each field).
 #   - Does NOT install npm packages or the claude binary. Install Claude Code first.
@@ -54,10 +56,9 @@ while [[ $# -gt 0 ]]; do
     --no-personal)        INCLUDE_PERSONAL=false; shift ;;
     --no-mcp)             INCLUDE_MCP=false; shift ;;
     --write-mcp-enabled)  WRITE_MCP_ENABLED=true; shift ;;
-    --plugins-only)       INCLUDE_VENDOR=false; INCLUDE_PERSONAL=false; INCLUDE_MCP=false; shift ;;
     --dry-run)            DRY_RUN=true; shift ;;
     -h|--help)
-      sed -n '2,34p' "$0"
+      sed -n '2,38p' "$0"
       exit 0 ;;
     *)
       printf "Unknown flag: %s\n" "$1" >&2
@@ -124,23 +125,6 @@ link_one() {
   fi
 }
 
-# Symlink every direct child of ${src_dir} into ${dst_dir} (file or directory).
-link_each_child() {
-  local src_dir="$1"
-  local dst_dir="$2"
-
-  if [[ ! -d "${src_dir}" ]]; then
-    return 0
-  fi
-
-  [[ "${DRY_RUN}" == false ]] && mkdir -p "${dst_dir}"
-  for child in "${src_dir}"/*; do
-    [[ -e "${child}" ]] || continue
-    local name; name="$(basename "${child}")"
-    link_one "${child}" "${dst_dir}/${name}"
-  done
-}
-
 # Copy (NOT symlink) src → dst, refusing to overwrite an existing file.
 copy_once() {
   local src="$1"
@@ -160,23 +144,7 @@ copy_once() {
   ok "copied: ${dst}"
 }
 
-# --- 1. plugins ------------------------------------------------------------
-
-log "Installing plugins"
-for plugin_dir in "${REPO_ROOT}"/plugins/*/; do
-  [[ -d "${plugin_dir}" ]] || continue
-  plugin_name="$(basename "${plugin_dir}")"
-  echo "  ${BLUE}plugin:${NC} ${plugin_name}"
-
-  link_each_child "${plugin_dir}commands"  "${TARGET}/commands"
-  link_each_child "${plugin_dir}agents"    "${TARGET}/agents"
-  link_each_child "${plugin_dir}skills"    "${TARGET}/skills"
-  link_each_child "${plugin_dir}hooks"     "${TARGET}/hooks"
-  link_each_child "${plugin_dir}templates" "${TARGET}/templates"
-done
-echo
-
-# --- 2. vendor -------------------------------------------------------------
+# --- 1. vendor -------------------------------------------------------------
 
 if [[ "${INCLUDE_VENDOR}" == true ]]; then
   log "Installing vendor (third-party MIT-licensed skills)"
@@ -200,7 +168,7 @@ else
   echo
 fi
 
-# --- 3. personal -----------------------------------------------------------
+# --- 2. personal -----------------------------------------------------------
 
 if [[ "${INCLUDE_PERSONAL}" == true ]]; then
   log "Installing personal config"
@@ -216,7 +184,7 @@ else
   echo
 fi
 
-# --- 4. mcp config ---------------------------------------------------------
+# --- 3. mcp config ---------------------------------------------------------
 
 if [[ "${INCLUDE_MCP}" == true ]]; then
   log "Installing MCP config (~/.mcp.json)"
@@ -251,17 +219,20 @@ else
   echo
 fi
 
-# --- 5. summary ------------------------------------------------------------
+# --- 4. summary ------------------------------------------------------------
 
 log "Done."
 echo
 echo "Next steps (in order):"
 echo "  1. Configure ~/.claude/settings.json from personal/settings.template.json."
 echo "  2. (optional) Activate MCPs: write ~/.claude/settings.local.json (see warning above)."
-echo "  3. Restart Claude Code so it picks up the new commands, skills, agents, hooks."
-echo "  4. Install marketplace plugins:"
+echo "  3. Restart Claude Code."
+echo "  4. Install bymax + companion plugins via the marketplace:"
 echo "       claude plugin marketplace add bymaxone/bymax.claude-code"
-echo "       claude plugin install bymax-all@bymax-claude-code"
+echo "       claude plugin install bymax-workflow@bymax-claude-code"
+echo "       claude plugin install bymax-quality@bymax-claude-code"
+echo "       claude plugin install bymax-bootstrap@bymax-claude-code"
+echo "       claude plugin install bymax-mobile@bymax-claude-code"
 echo "       claude plugin marketplace add anthropics/claude-plugins-official"
 echo "       claude plugin install frontend-design@claude-plugins-official"
 echo "       claude plugin marketplace add getsentry/sentry-mcp"

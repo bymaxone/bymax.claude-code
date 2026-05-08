@@ -15,10 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies (jq + shellcheck)
-        run: sudo apt-get update && sudo apt-get install -y jq shellcheck
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Claude Code
+        # validate.sh delegates marketplace and plugin checks to `claude plugin validate`
+        # so the validation tracks whatever schema the installed CLI expects.
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Run validate.sh
-        # Validates marketplace.json, every plugin.json, frontmatter on commands/agents,
-        # shell-script executable bits, shellcheck, and required project-level files.
+        # Delegates to `claude plugin validate` for marketplace/plugin manifests, then
+        # checks shell-script executable bits, shellcheck, and required project files.
         run: ./scripts/validate.sh

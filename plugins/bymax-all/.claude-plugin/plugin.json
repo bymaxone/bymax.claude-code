@@ -1,0 +1,12 @@
+{
+  "name": "bymax-all",
+  "description": "Meta-plugin reference for the complete bymax toolkit (workflow + quality + bootstrap + mobile). Note: Claude Code's plugin manifest does not auto-install dependencies — install bymax-workflow, bymax-quality, bymax-bootstrap, and bymax-mobile individually.",
+  "version": "1.1.0",
+  "author": {
+    "name": "Maximiliano Salvatti",
+    "url": "https://github.com/bymaxone"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/bymaxone/bymax.claude-code",
+  "keywords": ["meta", "all-in-one", "complete"]
+}

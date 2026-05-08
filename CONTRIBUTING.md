@@ -37,12 +37,16 @@ We'll discuss before any code is written. This avoids duplicate work and keeps t
 git clone https://github.com/bymaxone/bymax.claude-code.git
 cd bymax.claude-code
 
-# Validate the marketplace + every plugin.json
+# Validate the marketplace + every plugin
 ./scripts/validate.sh
+# (this delegates to `claude plugin validate` so it stays in sync with upstream)
 
 # Test locally — install the marketplace from the local path
 claude plugin marketplace add ./
-claude plugin install bymax-all@bymax-claude-code
+claude plugin install bymax-workflow@bymax-claude-code
+claude plugin install bymax-quality@bymax-claude-code
+claude plugin install bymax-bootstrap@bymax-claude-code
+claude plugin install bymax-mobile@bymax-claude-code
 
 # Restart Claude Code, then verify your changes
 ```
@@ -53,13 +57,13 @@ claude plugin install bymax-all@bymax-claude-code
 
 Before opening a PR, verify:
 
-- [ ] Each new `commands/*.md` has a YAML frontmatter `description` field with **clear English** triggers (PT/EN both welcome).
+- [ ] Each new `commands/*.md` has a YAML frontmatter `description` field with **clear English** triggers (PT/EN both welcome). If the description contains inline `Word: ` patterns, wrap it in single quotes.
 - [ ] Each new `agents/*.md` has `name`, `description`, `tools`, `model` (≥ `sonnet` — no `haiku`).
 - [ ] Each new `skills/*/SKILL.md` follows the official Claude Code skill format.
-- [ ] Each new `hooks/*.sh` is `chmod +x` and has an `exit 0` happy path.
+- [ ] Each new `hooks/*.sh` is `chmod +x` and has an `exit 0` happy path. Plugin-level hooks are wired via `<plugin>/hooks/hooks.json`.
 - [ ] Every test `it()` in any included test has a block comment (scenario + rule it protects).
 - [ ] No new `// @ts-ignore`, `// eslint-disable*`, `as any`, or other suppression comments.
-- [ ] `marketplace.json` and every touched `plugin.json` validate via `./scripts/validate.sh`.
+- [ ] `marketplace.json` and every touched `plugin.json` (under `<plugin>/.claude-plugin/plugin.json`) validate via `./scripts/validate.sh`.
 - [ ] If you bumped a plugin version, you also bumped the marketplace version (semver appropriately — see [Versioning](#versioning)).
 - [ ] You updated [`CHANGELOG.md`](./CHANGELOG.md) with a one-liner under the appropriate section.
 - [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat(workflow): add /release command`).

@@ -1,5 +1,5 @@
 ---
-description: Comprehensive security and quality review of uncommitted changes. Walks every changed file and flags issues across CRITICAL (secrets, SQL injection, XSS, suppression comments like @ts-ignore/eslint-disable), HIGH (long functions, missing JSDoc on exports, cross-feature imports, swallowed errors), MEDIUM (mutation patterns, magic numbers, enum usage, non-English comments), and LOW (nits). Blocks the commit on any CRITICAL or HIGH. Run before /verify and before any commit. Triggers: "code review", "review changes", "check this code", "is this safe to commit", "revisar código".
+description: 'Comprehensive security and quality review of uncommitted changes. Walks every changed file and flags issues across CRITICAL (secrets, SQL injection, XSS, suppression comments like @ts-ignore/eslint-disable), HIGH (long functions, missing JSDoc on exports, cross-feature imports, swallowed errors), MEDIUM (mutation patterns, magic numbers, enum usage, non-English comments), and LOW (nits). Blocks the commit on any CRITICAL or HIGH. Run before /verify and before any commit. Triggers: "code review", "review changes", "check this code", "is this safe to commit", "revisar código".'
 ---
 
 # Code Review

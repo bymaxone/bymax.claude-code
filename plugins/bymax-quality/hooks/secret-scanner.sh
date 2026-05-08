@@ -35,7 +35,7 @@ file=$(echo "$input" | jq -r '
 # Some patterns intentionally overlap (e.g. */tests/* overlaps *.example).
 # All branches lead to the same `exit 0`, so order within the alternation is irrelevant.
 case "$file" in
-  *.test.*    | *.spec.*   | */__tests__/* | */__fixtures__/* \
+  *.test.*    | *.spec.*   | *-spec.*    | */__tests__/* | */__fixtures__/* \
   | */tests/* | *.example  | *.example.*   | */.env.example   \
   | */templates/*           | */node_modules/*               \
   | */dist/*  | */build/*  | */.next/*    | */.expo/*        \

@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 #
-# Validate marketplace.json + every plugin.json in this repo.
-# Used by CI and locally before pushing.
+# Validate the marketplace + every plugin in this repo against whatever schema
+# the installed Claude Code expects.
+#
+# Delegates the marketplace and plugin manifest checks to `claude plugin validate`
+# so this stays aligned with upstream as the schema evolves. The remaining checks
+# (executable bits, shellcheck, required project files) are still run here.
 #
 # Checks:
-#   1. .claude-plugin/marketplace.json is valid JSON and has required fields.
-#   2. Every plugin listed in marketplace.json has a corresponding plugin.json.
-#   3. Every plugin.json is valid JSON and has required fields.
-#   4. Every command/agent/skill path declared in plugin.json actually exists.
-#   5. Every command file has a YAML frontmatter `description` field.
-#   6. Every agent file has frontmatter with `name`, `description`, and `tools`.
-#   7. Every shell hook is executable (chmod +x).
-#   8. Every shell script passes shellcheck (if installed).
+#   1. .claude-plugin/marketplace.json validates via `claude plugin validate`.
+#   2. Every plugin under plugins/ validates via `claude plugin validate`.
+#   3. Every shell hook is executable (chmod +x).
+#   4. Every shell script passes shellcheck (if installed).
+#   5. Every required project-level file is present.
 #
 # Exit codes:
 #   0 — all valid
@@ -35,137 +36,38 @@ section() { printf "${BLUE}==>${NC} %s\n" "$*"; }
 
 errors=0
 
-if ! command -v jq >/dev/null 2>&1; then
-  printf "${RED}jq is required but not installed.${NC}\n" >&2
-  printf "Install: brew install jq  (macOS)  |  apt-get install jq  (Debian/Ubuntu)\n" >&2
+if ! command -v claude >/dev/null 2>&1; then
+  printf "${RED}claude CLI is required but not installed.${NC}\n" >&2
+  printf "Install: https://docs.claude.com/claude-code\n" >&2
   exit 1
 fi
 
 cd "${REPO_ROOT}" || { printf "Cannot cd into repo root: %s\n" "${REPO_ROOT}" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------
-# 1. Validate .claude-plugin/marketplace.json
+# 1. Validate the marketplace manifest
 # ---------------------------------------------------------------------------
 
-section "Validating .claude-plugin/marketplace.json"
+section "Validating marketplace manifest"
 
-MP_FILE=".claude-plugin/marketplace.json"
-if [[ ! -f "${MP_FILE}" ]]; then
-  fail "${MP_FILE} not found"
-  exit 1
+if ! claude plugin validate "${REPO_ROOT}" 2>&1 | sed 's/^/  /'; then
+  fail "marketplace.json failed validation"
 fi
-
-if ! jq empty "${MP_FILE}" 2>/dev/null; then
-  fail "${MP_FILE} is not valid JSON"
-  exit 1
-fi
-ok "${MP_FILE} is valid JSON"
-
-for field in name version plugins; do
-  if [[ "$(jq -r ".${field} // empty" "${MP_FILE}")" == "" ]]; then
-    fail "${MP_FILE} missing required field: ${field}"
-  else
-    ok "${MP_FILE} has .${field}"
-  fi
-done
 
 # ---------------------------------------------------------------------------
 # 2. Validate every plugin
 # ---------------------------------------------------------------------------
 
-# Returns 0 if file has a YAML frontmatter block (--- ... ---) at the top
-# AND the named field is present and non-empty.
-has_frontmatter_field() {
-  local file="$1"
-  local field="$2"
+for plugin_dir in "${REPO_ROOT}"/plugins/*/; do
+  [[ -d "${plugin_dir}" ]] || continue
+  plugin_name="$(basename "${plugin_dir}")"
 
-  # Frontmatter must be lines 1..N where lines 1 and N are exactly "---".
-  if [[ "$(head -n 1 "${file}")" != "---" ]]; then
-    return 1
+  section "Validating plugin: ${plugin_name}"
+
+  if ! claude plugin validate "${plugin_dir}" 2>&1 | sed 's/^/  /'; then
+    fail "${plugin_name} failed validation"
   fi
-
-  awk -v field="${field}" '
-    NR == 1 && $0 == "---" { in_fm=1; next }
-    in_fm && $0 == "---" { in_fm=0; exit }
-    in_fm {
-      # Match "field: value" with non-empty value.
-      pat="^[[:space:]]*" field "[[:space:]]*:[[:space:]]*[^[:space:]].*$"
-      if ($0 ~ pat) found=1
-    }
-    END { exit (found ? 0 : 1) }
-  ' "${file}"
-}
-
-plugin_paths=$(jq -r '.plugins[].path' "${MP_FILE}")
-
-while IFS= read -r plugin_path; do
-  [[ -z "${plugin_path}" ]] && continue
-
-  section "Validating plugin: ${plugin_path}"
-
-  if [[ ! -d "${plugin_path}" ]]; then
-    fail "Plugin directory does not exist: ${plugin_path}"
-    continue
-  fi
-
-  PLUGIN_JSON="${plugin_path}/plugin.json"
-  if [[ ! -f "${PLUGIN_JSON}" ]]; then
-    fail "${PLUGIN_JSON} not found"
-    continue
-  fi
-
-  if ! jq empty "${PLUGIN_JSON}" 2>/dev/null; then
-    fail "${PLUGIN_JSON} is not valid JSON"
-    continue
-  fi
-  ok "${PLUGIN_JSON} is valid JSON"
-
-  for field in name version description; do
-    if [[ "$(jq -r ".${field} // empty" "${PLUGIN_JSON}")" == "" ]]; then
-      fail "${PLUGIN_JSON} missing required field: ${field}"
-    fi
-  done
-
-  # 2.a. Verify all referenced commands/agents files exist + carry correct frontmatter.
-  while IFS= read -r ref; do
-    [[ -z "${ref}" ]] && continue
-    target="${plugin_path}/${ref#./}"
-    if [[ ! -f "${target}" ]]; then
-      fail "${PLUGIN_JSON} references missing command file: ${ref} (resolved: ${target})"
-      continue
-    fi
-    if ! has_frontmatter_field "${target}" "description"; then
-      fail "Command ${target} is missing YAML frontmatter 'description' field"
-    fi
-  done < <(jq -r '.commands[]? // empty' "${PLUGIN_JSON}")
-
-  while IFS= read -r ref; do
-    [[ -z "${ref}" ]] && continue
-    target="${plugin_path}/${ref#./}"
-    if [[ ! -f "${target}" ]]; then
-      fail "${PLUGIN_JSON} references missing agent file: ${ref} (resolved: ${target})"
-      continue
-    fi
-    for fm_field in name description tools; do
-      if ! has_frontmatter_field "${target}" "${fm_field}"; then
-        fail "Agent ${target} is missing YAML frontmatter '${fm_field}' field"
-      fi
-    done
-  done < <(jq -r '.agents[]? // empty' "${PLUGIN_JSON}")
-
-  # 2.b. Verify skills resolve to either ${path}/SKILL.md or ${path}.md.
-  while IFS= read -r ref; do
-    [[ -z "${ref}" ]] && continue
-    target="${plugin_path}/${ref#./}"
-    skill_md="${target}/SKILL.md"
-    if [[ ! -f "${skill_md}" ]] && [[ ! -f "${target}.md" ]]; then
-      fail "${PLUGIN_JSON} references missing skill: ${ref} (expected ${skill_md} or ${target}.md)"
-    fi
-  done < <(jq -r '.skills[]? // empty' "${PLUGIN_JSON}")
-
-  ok "Plugin ${plugin_path} structure is consistent"
-
-done <<< "${plugin_paths}"
+done
 
 # ---------------------------------------------------------------------------
 # 3. Verify every shell script is executable
@@ -222,6 +124,7 @@ REQUIRED_FILES=(
   "SECURITY.md"
   "CODE_OF_CONDUCT.md"
   ".gitignore"
+  ".claude-plugin/marketplace.json"
   "templates/CLAUDE.md"
   "templates/AGENTS.md"
   "templates/README.md"

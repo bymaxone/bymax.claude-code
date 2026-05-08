@@ -48,10 +48,13 @@ Every Claude Code user reinvents the same scaffolding: standards docs, review sk
 
 ```bash
 claude plugin marketplace add bymaxone/bymax.claude-code
-claude plugin install bymax-all@bymax-claude-code
+claude plugin install bymax-workflow@bymax-claude-code
+claude plugin install bymax-quality@bymax-claude-code
+claude plugin install bymax-bootstrap@bymax-claude-code
+claude plugin install bymax-mobile@bymax-claude-code
 ```
 
-That's it. Restart Claude Code and you have **5 plugins** with **14 slash commands**, **2 skills**, **6 sub-agents**, **2 hooks**, and **20 templates** — the full workflow ready.
+That's it. Restart Claude Code and you have **4 installable plugins** with **14 slash commands**, **2 skills**, **6 sub-agents**, **2 hooks**, and **20 templates** — the full workflow ready.
 
 ---
 
@@ -65,18 +68,16 @@ claude plugin marketplace add bymaxone/bymax.claude-code
 
 ### 2. Install plugins
 
-Pick one approach:
+Claude Code installs plugins individually — install the four you want:
 
 ```bash
-# Recommended — install everything
-claude plugin install bymax-all@bymax-claude-code
-
-# Or pick what you want
 claude plugin install bymax-workflow@bymax-claude-code     # planning + execution
 claude plugin install bymax-quality@bymax-claude-code      # review + TDD + agents + hooks
 claude plugin install bymax-bootstrap@bymax-claude-code    # scaffold new projects
 claude plugin install bymax-mobile@bymax-claude-code       # iOS Simulator + Android Emulator
 ```
+
+> Each `claude plugin install` accepts `--scope user` (default — global, every project) or `--scope project` (only this project, declared in `<project>/.claude/settings.json`).
 
 ### 3. Restart Claude Code
 
@@ -170,9 +171,9 @@ Two slash commands that take an Expo / React Native project from cold to running
 
 Both commands auto-detect the package manager (`pnpm` / `yarn` / `npm`), use a build-artifact heuristic to choose between Metro reattach and full rebuild, and pre-flight tooling so they bail early with a clear, actionable error if Xcode CLI tools or the Android SDK are missing.
 
-### 🎁 [`bymax-all`](./plugins/bymax-all/) — Everything
+### 🎁 [`bymax-all`](./plugins/bymax-all/) — Reference index
 
-Meta-plugin that pulls in all four above. Recommended starting point.
+A docs-only marketplace entry that lists the full set. Claude Code's plugin manifest does **not** auto-install dependencies, so installing `bymax-all` does nothing on its own — install the four sibling plugins individually for the complete toolkit.
 
 ---
 
@@ -223,7 +224,7 @@ bymax.claude-code/
 │   ├── bymax-quality/                  ← review + TDD + agents + hooks
 │   ├── bymax-bootstrap/                ← project scaffolding
 │   ├── bymax-mobile/                   ← iOS Simulator + Android Emulator
-│   └── bymax-all/                      ← meta (depends on the four above)
+│   └── bymax-all/                      ← reference index (no auto-install in Claude Code)
 │
 ├── templates/                          ← project bootstrapping templates
 │   ├── CLAUDE.md                       ← starter CLAUDE.md (load-on-demand pattern)
@@ -253,7 +254,10 @@ bymax.claude-code/
 
 ```bash
 claude plugin marketplace add bymaxone/bymax.claude-code
-claude plugin install bymax-all@bymax-claude-code
+claude plugin install bymax-workflow@bymax-claude-code
+claude plugin install bymax-quality@bymax-claude-code
+claude plugin install bymax-bootstrap@bymax-claude-code
+claude plugin install bymax-mobile@bymax-claude-code
 ```
 
 Only the `plugins/` content is exposed via `/plugin install`. The vendor/ and personal/ folders are visible in the repo for backup but not installable.
@@ -270,8 +274,8 @@ cd ~/dotfiles-claude
 # 2. Preview what install.sh will do (no writes)
 ./scripts/install.sh --dry-run
 
-# 3. Run for real — symlinks plugins/vendor/personal into ~/.claude/, copies
-#    ~/.mcp.json, AND writes ~/.claude/settings.local.json to enable the MCPs.
+# 3. Restore vendor + personal + MCP config into ~/.claude/. (Plugins are
+#    NOT symlinked here — they are installed below via the marketplace.)
 ./scripts/install.sh --write-mcp-enabled
 
 # 4. Configure your settings (template has comments inline)
@@ -280,7 +284,10 @@ $EDITOR ~/.claude/settings.json
 
 # 5. Install marketplace plugins
 claude plugin marketplace add bymaxone/bymax.claude-code
-claude plugin install bymax-all@bymax-claude-code
+claude plugin install bymax-workflow@bymax-claude-code
+claude plugin install bymax-quality@bymax-claude-code
+claude plugin install bymax-bootstrap@bymax-claude-code
+claude plugin install bymax-mobile@bymax-claude-code
 claude plugin marketplace add anthropics/claude-plugins-official
 claude plugin install frontend-design@claude-plugins-official
 claude plugin marketplace add getsentry/sentry-mcp
@@ -294,16 +301,15 @@ claude mcp add github -e GITHUB_PERSONAL_ACCESS_TOKEN=<your_pat> -- npx -y @mode
 
 #### What `install.sh` restores
 
-| Layer        | What                                                                             | Mode     |
-| ------------ | -------------------------------------------------------------------------------- | -------- |
-| **plugins**  | every `commands/`, `agents/`, `skills/`, `hooks/`, `templates/` from each plugin | symlinks |
-| **vendor**   | `ecc-skills/*.md` + the full `ui-ux-pro-max/` directory                          | symlinks |
-| **personal** | `prettier-format.sh` (hook)                                                      | symlinks |
-| **MCP**      | `mcp.template.json` → `~/.mcp.json` (only if not already present)                | **copy** |
+| Layer        | What                                                                | Mode     |
+| ------------ | ------------------------------------------------------------------- | -------- |
+| **vendor**   | `ecc-skills/*.md` + the full `ui-ux-pro-max/` directory             | symlinks |
+| **personal** | `prettier-format.sh` (hook)                                         | symlinks |
+| **MCP**      | `mcp.template.json` → `~/.mcp.json` (only if not already present)   | **copy** |
 
-Settings (`~/.claude/settings.json`) and the marketplace plugin install commands are **manual** — the script prints them at the end so you can copy/paste.
+The bymax plugins themselves are installed via `claude plugin install` (Step 5 above), not via `install.sh` — Claude Code's plugin marketplace handles them natively. Settings (`~/.claude/settings.json`) and the marketplace plugin install commands are **manual** — the script prints them at the end so you can copy/paste.
 
-Flags: `--dry-run`, `--no-vendor`, `--no-personal`, `--no-mcp`, `--write-mcp-enabled`, `--plugins-only`.
+Flags: `--dry-run`, `--no-vendor`, `--no-personal`, `--no-mcp`, `--write-mcp-enabled`.
 
 ---
 
@@ -382,7 +388,10 @@ cd bymax.claude-code
 
 # Test locally
 claude plugin marketplace add ./
-claude plugin install bymax-all@bymax-claude-code
+claude plugin install bymax-workflow@bymax-claude-code
+claude plugin install bymax-quality@bymax-claude-code
+claude plugin install bymax-bootstrap@bymax-claude-code
+claude plugin install bymax-mobile@bymax-claude-code
 ```
 
 ---

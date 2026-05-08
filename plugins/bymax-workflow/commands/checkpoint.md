@@ -1,5 +1,5 @@
 ---
-description: Create, verify, list, or clear named checkpoints during a long-running task. A checkpoint snapshots the current git SHA, test pass rate, and coverage so you can compare against it later (e.g., "did this refactor regress tests?"). Logs to `.claude/checkpoints.log` in the project. Useful for marking "feature-start", "core-done", "refactor-done" while building. Args: create <name> | verify <name> | list | clear.
+description: 'Create, verify, list, or clear named checkpoints during a long-running task. A checkpoint snapshots the current git SHA, test pass rate, and coverage so you can compare against it later (e.g., "did this refactor regress tests?"). Logs to `.claude/checkpoints.log` in the project. Useful for marking "feature-start", "core-done", "refactor-done" while building. Args: create <name> | verify <name> | list | clear.'
 ---
 
 # Checkpoint Command

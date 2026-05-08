@@ -1,5 +1,5 @@
 ---
-description: Audit an EXISTING project and apply universal best practices incrementally and non-destructively. Adds what's missing (.vscode, Prettier, Husky, EditorConfig, CLAUDE.md), proposes strengthening tsconfig and ESLint with explicit user confirmation per change. Never overwrites existing configs silently. Triggers: "upgrade standards", "apply standards", "improve setup", "trazer boas práticas", "atualizar config", "padronizar projeto".
+description: 'Audit an EXISTING project and apply universal best practices incrementally and non-destructively. Adds what''s missing (.vscode, Prettier, Husky, EditorConfig, CLAUDE.md), proposes strengthening tsconfig and ESLint with explicit user confirmation per change. Never overwrites existing configs silently. Triggers: "upgrade standards", "apply standards", "improve setup", "trazer boas práticas", "atualizar config", "padronizar projeto".'
 ---
 
 # Upgrade Standards Command
